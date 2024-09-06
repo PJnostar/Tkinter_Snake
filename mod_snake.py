@@ -12,14 +12,15 @@ class Snake:
 
         self.key_last = []
         self.tail_in_previous_step = np.zeros(shape=2).astype(int)
+        self.tail_in_previous_step_key = []
 
         #                 [     right,     left, up,    down       ]
-        self.boundaries = [board.shape[0]-1, 0, 0, board.shape[1]-1]
-        # print(self.boundaries)
+        # self.boundaries = [board.shape[0]-1, 0, 0, board.shape[1]-1]
+        self.boundaries = [board.shape[0], -1, -1, board.shape[1]]
 
     def snake_move(self, key):
-        self.tail_in_previous_step = self.position[-1,:]
-        print("tail position: ", self.tail_in_previous_step)
+        self.tail_in_previous_step = np.array([self.position[-1,0],self.position[-1,1]])        #makes it into a copy, not a reference
+        self.tail_in_previous_step_key = self.key_last
         # there are 2 conditions to move:
         # 1 - If snake wants to move to the right, then it could not already be moving to the left
         # 2 - If the snake is already moving to the right, then pressing Left cannot change direction - it keeps going right
@@ -32,15 +33,16 @@ class Snake:
                 self.key_last = "Left"
                 self.position[1:, :] = self.position[0:self.len-1,:]
                 self.position[0,0] -= 1
-            elif key == "Up" and self.key_last != "Down":
+            elif key == "Up" and self.key_last != "Down" or (key=="Down" and self.key_last=="Up"):
                 self.key_last = "Up"
                 self.position[1:, :] = self.position[0:self.len-1,:]
                 self.position[0,1] -= 1
-            elif key == "Down"and self.key_last != "Up":
+            elif key == "Down"and self.key_last != "Up" or (key=="Up" and self.key_last=="Down"):
                 self.key_last = "Down"
                 self.position[1:, :] = self.position[0:self.len-1,:]
                 self.position[0,1] += 1
-        print("snake position: in snake move \n", self.position)
+        # print("tail position in snake move: ", self.tail_in_previous_step)
+        # print("snake position in snake move:  \n", self.position)
 
     def check_boundaries(self, key):
         if self.position[0,0]>=self.boundaries[0] and key=="Right":
@@ -55,18 +57,21 @@ class Snake:
             return True
         
     def snake_grow(self, canvas: tk.Canvas):
+        """ 
+        two different approaches to adding a tail
         #first determine where to add the new element of the body (always behind the tail)
-        if self.key_last == "Right":
+        if self.tail_in_previous_step_key == "Right":
             new_body_cell = np.array( self.position[-1,:]-[1,0] )
-        elif self.key_last == "Left":
+        elif self.tail_in_previous_step_key == "Left":
             new_body_cell = np.array( self.position[-1,:]+[1,0] )
-        elif self.key_last == "Up":
+        elif self.tail_in_previous_step_key == "Up":
             new_body_cell = np.array( self.position[-1,:]+[0,1] )
-        elif self.key_last == "Down":
+        elif self.tail_in_previous_step_key == "Down":
             new_body_cell = np.array( self.position[-1,:]-[0,1] )
 
         #then add new element to the position array and update the snake length
-        self.position = np.vstack((self.position, new_body_cell))
-
+        self.position = np.vstack((self.position, new_body_cell)) 
+        """
+        self.position =  np.vstack((self.position, self.tail_in_previous_step))
         self.len = self.position.shape[0]
         self.body.append(canvas.create_rectangle(0,0,0,0, fill="Green"))
